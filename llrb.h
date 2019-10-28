@@ -75,10 +75,12 @@ class Set {
     return res;
   }
 
+  NodeColor neg_color(NodeColor n) const { return n == kBlack ? kRed : kBlack; }
+
   void color_flip(Node *node) const {
-    node->color = !node->color;
-    node->lc->color = !node->lc->color;
-    node->rc->color = !node->rc->color;
+    node->color = neg_color(node->color);
+    node->lc->color = neg_color(node->lc->color);
+    node->rc->color = neg_color(node->rc->color);
   }
 
   Node *insert(Node *root, const Key &key) const;
@@ -94,6 +96,10 @@ class Set {
   Node *fix_up(Node *root) const;
 
   const Key &get_min(Node *root) const;
+
+  void serialize(Node *root) const;
+
+  void print_tree(Set::Node *root, int indent) const;
 
   Compare cmp_ = Compare();
   Node *root_;
@@ -131,6 +137,9 @@ class Set {
 
   bool empty() const;
 
+  void serialize() const;
+
+  void print_tree() const;
 };
 
 template<class Key, class Compare>
@@ -152,7 +161,11 @@ template<class Key, class Compare>
 typename Set<Key, Compare>::SizeType
 Set<Key, Compare>::erase(const KeyType &key) {
   if (count(key) > 0) {
-    delete_arbitrary(root_, key);
+    if (!is_red(root_->lc) && !(is_red(root_->rc)))
+      root_->color = kRed;
+    root_ = delete_arbitrary(root_, key);
+    if (root_ != nullptr)
+      root_->color = kBlack;
     return 1;
   } else {
     return 0;
@@ -168,6 +181,7 @@ void Set<Key, Compare>::clear() {
 template<class Key, class Compare>
 void Set<Key, Compare>::insert(const KeyType &key) {
   root_ = insert(root_, key);
+  root_->color = kBlack;
 }
 
 template<class Key, class Compare>
@@ -180,36 +194,44 @@ typename Set<Key, Compare>::Node *
 Set<Key, Compare>::insert(Set::Node *root, const Key &key) const {
   if (root == nullptr)
     return new Node(key, kRed, 1);
-  if (is_red(root->lc) && is_red(root->rc))
-    color_flip(root);
+//  if (is_red(root->lc) && is_red(root->rc))
+//    color_flip(root);
   if (root->key == key);
-  else if (cmp_(root->key, key)) // if (root->key < key)
+  else if (cmp_(key, root->key)) // if (key < root->key)
     root->lc = insert(root->lc, key);
   else
     root->rc = insert(root->rc, key);
-  fix_up(root);
+  if (is_red(root->rc) && !is_red(root->lc))
+    root = rotate_left(root);
+  if (is_red(root->lc) && is_red(root->lc->lc))
+    root = rotate_right(root);
+  if (is_red(root->lc) && is_red(root->rc))
+    color_flip(root);
+  root->size = size(root->lc) + size(root->rc) + 1;
   return root;
 }
 
 template<class Key, class Compare>
 typename Set<Key, Compare>::Node *
 Set<Key, Compare>::delete_min(Set::Node *root) const {
-  if (root == nullptr) {
+  if (root->lc == nullptr) {
     delete root;
     return nullptr;
   }
   if (!is_red(root->lc) && !is_red(root->lc->lc))
     root = move_red_left(root);
   root->lc = delete_min(root->lc);
-  return delete_min(root);
+  return fix_up(root);
 }
 
 template<class Key, class Compare>
 typename Set<Key, Compare>::Node *
 Set<Key, Compare>::move_red_right(Set::Node *root) const {
   color_flip(root);
-  if (is_red(root->lc->lc)) // assume that root->lc != nullptr when calling this function
-    root = rotate_right(root), color_flip(root);
+  if (is_red(root->lc->lc)) { // assume that root->lc != nullptr when calling this function
+    root = rotate_right(root);
+    color_flip(root);
+  }
   return root;
 }
 
@@ -258,13 +280,13 @@ Set<Key, Compare>::size() const {
 template<class Key, class Compare>
 typename Set<Key, Compare>::Node *
 Set<Key, Compare>::delete_arbitrary(Set::Node *root, Key key) const {
-  if (cmp_(root->key, key)) {
-    // root->key < key
+  if (cmp_(key, root->key)) {
+    // key < root->key
     if (!is_red(root->lc) && !(is_red(root->lc->lc)))
       root = move_red_left(root);
     root->lc = delete_arbitrary(root->lc, key);
   } else {
-    // root -> <= key
+    // key >= root->key
     if (is_red(root->lc))
       root = rotate_right(root);
     if (key == root->key && root->rc == nullptr) {
@@ -283,6 +305,35 @@ Set<Key, Compare>::delete_arbitrary(Set::Node *root, Key key) const {
   return fix_up(root);
 
 }
+
+template<class Key, class Compare>
+void Set<Key, Compare>::serialize() const {
+  serialize(root_);
+}
+
+template<class Key, class Compare>
+void Set<Key, Compare>::serialize(Set::Node *root) const {
+  if (root == nullptr)
+    return;
+  serialize(root->lc);
+  std::cout << root->key << ' ';
+  serialize(root->rc);
+}
+
+template<class Key, class Compare>
+void Set<Key, Compare>::print_tree(Set::Node *root, int indent) const {
+  if (root == nullptr)
+    return;
+  print_tree(root->lc, indent + 4);
+  std::cout << std::string(indent, '-') << root->key << std::endl;
+  print_tree(root->rc, indent + 4);
+}
+
+template<class Key, class Compare>
+void Set<Key, Compare>::print_tree() const {
+  print_tree(root_, 0);
+}
+
 
 } // namespace mgt
 #endif
