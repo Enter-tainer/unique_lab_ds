@@ -83,7 +83,7 @@ class Set {
 
   Node *insert(Node *root, const Key &key) const;
 
-  Node *delete_arbitrary(Node *root) const;
+  Node *delete_arbitrary(Node *root, Key key) const;
 
   Node *delete_min(Node *root) const;
 
@@ -151,7 +151,12 @@ Set<Key, Compare>::count(ConstReference key) const {
 template<class Key, class Compare>
 typename Set<Key, Compare>::SizeType
 Set<Key, Compare>::erase(const KeyType &key) {
-  return 0; //TODO:
+  if (count(key) > 0) {
+    delete_arbitrary(root_, key);
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 template<class Key, class Compare>
@@ -252,8 +257,31 @@ Set<Key, Compare>::size() const {
 
 template<class Key, class Compare>
 typename Set<Key, Compare>::Node *
-Set<Key, Compare>::delete_arbitrary(Set::Node *root) const {
-  return nullptr;
+Set<Key, Compare>::delete_arbitrary(Set::Node *root, Key key) const {
+  if (cmp_(root->key, key)) {
+    // root->key < key
+    if (!is_red(root->lc) && !(is_red(root->lc->lc)))
+      root = move_red_left(root);
+    root->lc = delete_arbitrary(root->lc, key);
+  } else {
+    // root -> <= key
+    if (is_red(root->lc))
+      root = rotate_right(root);
+    if (key == root->key && root->rc == nullptr) {
+      delete root;
+      return nullptr;
+    }
+    if (!is_red(root->rc) && !is_red(root->rc->lc))
+      root = move_red_right(root);
+    if (key == root->key) {
+      root->key = get_min(root->rc);
+      root->rc = delete_min(root->rc);
+    } else {
+      root->rc = delete_arbitrary(root->rc, key);
+    }
+  }
+  return fix_up(root);
+
 }
 
 } // namespace mgt
