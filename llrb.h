@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 namespace mgt {
 template<class Key, class Compare = std::less<Key>>
@@ -97,7 +98,7 @@ class Set {
 
   const Key &get_min(Node *root) const;
 
-  void serialize(Node *root) const;
+  void serialize(Node *root, std::vector<Key> &) const;
 
   void print_tree(Set::Node *root, int indent) const;
 
@@ -115,7 +116,9 @@ class Set {
   typedef Key &Reference;
   typedef const Key &ConstReference;
 
-  Set() = default;
+  Set() {
+    root_ = nullptr;
+  }
 
   Set(Set &) = default;
 
@@ -137,7 +140,7 @@ class Set {
 
   bool empty() const;
 
-  void serialize() const;
+  std::vector<Key> serialize() const;
 
   void print_tree() const;
 };
@@ -194,8 +197,6 @@ typename Set<Key, Compare>::Node *
 Set<Key, Compare>::insert(Set::Node *root, const Key &key) const {
   if (root == nullptr)
     return new Node(key, kRed, 1);
-//  if (is_red(root->lc) && is_red(root->rc))
-//    color_flip(root);
   if (root->key == key);
   else if (cmp_(key, root->key)) // if (key < root->key)
     root->lc = insert(root->lc, key);
@@ -307,17 +308,19 @@ Set<Key, Compare>::delete_arbitrary(Set::Node *root, Key key) const {
 }
 
 template<class Key, class Compare>
-void Set<Key, Compare>::serialize() const {
-  serialize(root_);
+std::vector<Key> Set<Key, Compare>::serialize() const {
+  std::vector<int> v;
+  serialize(root_, v);
+  return v;
 }
 
 template<class Key, class Compare>
-void Set<Key, Compare>::serialize(Set::Node *root) const {
+void Set<Key, Compare>::serialize(Set::Node *root, std::vector<Key> &res) const {
   if (root == nullptr)
     return;
-  serialize(root->lc);
-  std::cout << root->key << ' ';
-  serialize(root->rc);
+  serialize(root->lc, res);
+  res.push_back(root->key);
+  serialize(root->rc, res);
 }
 
 template<class Key, class Compare>
