@@ -83,6 +83,8 @@ class Set {
 
   Node *insert(Node *root, const Key &key) const;
 
+  Node *delete_arbitrary(Node *root) const;
+
   Node *delete_min(Node *root) const;
 
   Node *move_red_right(Node *root) const;
@@ -165,7 +167,7 @@ void Set<Key, Compare>::insert(const KeyType &key) {
 
 template<class Key, class Compare>
 bool Set<Key, Compare>::empty() const {
-  return root_ == nullptr;
+  return size(root_) == 0;
 }
 
 template<class Key, class Compare>
@@ -181,14 +183,20 @@ Set<Key, Compare>::insert(Set::Node *root, const Key &key) const {
   else
     root->rc = insert(root->rc, key);
   fix_up(root);
-  root->size = size(root->lc) + size(root->rc) + 1;
   return root;
 }
 
 template<class Key, class Compare>
 typename Set<Key, Compare>::Node *
 Set<Key, Compare>::delete_min(Set::Node *root) const {
-  return nullptr;
+  if (root == nullptr) {
+    delete root;
+    return nullptr;
+  }
+  if (!is_red(root->lc) && !is_red(root->lc->lc))
+    root = move_red_left(root);
+  root->lc = delete_min(root->lc);
+  return delete_min(root);
 }
 
 template<class Key, class Compare>
@@ -224,6 +232,7 @@ Set<Key, Compare>::fix_up(Set::Node *root) const {
   if (is_red(root->lc) && is_red(root->rc))
     // break up 4 node
     color_flip(root);
+  root->size = size(root->lc) + size(root->rc) + 1;
   return root;
 }
 
@@ -239,6 +248,12 @@ template<class Key, class Compare>
 typename Set<Key, Compare>::SizeType
 Set<Key, Compare>::size() const {
   return size(root_);
+}
+
+template<class Key, class Compare>
+typename Set<Key, Compare>::Node *
+Set<Key, Compare>::delete_arbitrary(Set::Node *root) const {
+  return nullptr;
 }
 
 } // namespace mgt
