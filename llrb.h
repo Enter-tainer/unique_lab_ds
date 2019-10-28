@@ -24,8 +24,17 @@ class Set {
     Node() = default;
   };
 
+  void destroyTree(Node *root) {
+    if (root != nullptr) {
+      destroyTree(root->lc);
+      destroyTree(root->rc);
+      root->lc = root->rc = nullptr;
+      delete root;
+    }
+  }
+
   bool is_red(const Node *nd) const {
-    return nd == nullptr ? kBlack : nd->color;
+    return nd == nullptr ? false : nd->color; // kRed == 1, kBlack == 0
   }
 
   static Node *rotate_left(Node *node) {
@@ -57,7 +66,15 @@ class Set {
     node->color = kRed;
   }
 
+  static void color_flip(Node *node) {
+    node->color = !node->color;
+    node->lc->color = !node->lc->color;
+    node->rc->color = !node->rc->color;
+  }
+
   Node *root_;
+
+  Node *insert(Node *root, const Key &key) const;
 
  public:
 
@@ -75,6 +92,10 @@ class Set {
   Set(Set &) = default;
 
   Set(Set &&) noexcept = default;
+
+  ~Set() {
+    destroyTree(root_);
+  }
 
   SizeType count(const KeyType &key) const;
 
@@ -111,17 +132,38 @@ Set<Key, Compare>::erase(const KeyType &key) {
 
 template<class Key, class Compare>
 void Set<Key, Compare>::clear() {
-  //TODO:
+  destroyTree(root_);
+  root_ = nullptr;
 }
 
 template<class Key, class Compare>
 void Set<Key, Compare>::insert(ConstReference key) {
-  //TODO:
+  root_ = insert(root_, key);
 }
 
 template<class Key, class Compare>
 bool Set<Key, Compare>::empty() const {
-  return false; //TODO:
+  return root_ == nullptr;
+}
+
+template<class Key, class Compare>
+typename Set<Key, Compare>::Node *
+Set<Key, Compare>::insert(Set::Node *root, const Key &key) const {
+  if (root == nullptr)
+    return new Node(key, kRed);
+  if (is_red(root->lc) && is_red(root->rc))
+    color_flip(root);
+  if (root->key == key);
+  else if (cmp_(root->key, key)) // if (root->key < key)
+    root->lc = insert(root->lc, key);
+  else
+    root->rc = insert(root->rc, key);
+  if (is_red(root->rc)) // fix right leaned red link
+    root = rotate_left(root);
+  if (is_red(root->lc) && is_red(root->lc->lc)) // fix doubly linked red link
+    // if (root->lc == nullptr), then the second expr won't be evaluated
+    root = rotate_right(root);
+  return root;
 }
 
 } // namespace mgt
