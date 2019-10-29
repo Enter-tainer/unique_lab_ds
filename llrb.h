@@ -16,11 +16,11 @@ class Set {
 
   struct Node {
     Key key;
-    Node *lc, *rc;
+    Node *lc{nullptr}, *rc{nullptr};
     size_t size{0};
     NodeColor color; // the color of the parent link
 
-    Node(Key key, NodeColor color, size_t size) : key(key), color(color), size(size) { lc = rc = nullptr; }
+    Node(Key key, NodeColor color, size_t size) : key(key), color(color), size(size) {}
 
     Node() = default;
   };
@@ -98,12 +98,12 @@ class Set {
 
   const Key &get_min(Node *root) const;
 
-  void serialize(Node *root, std::vector<Key> &) const;
+  void serialize(Node *root, std::vector<Key> *) const;
 
   void print_tree(Set::Node *root, int indent) const;
 
   Compare cmp_ = Compare();
-  Node *root_;
+  Node *root_{nullptr};
 
  public:
 
@@ -116,9 +116,7 @@ class Set {
   typedef Key &Reference;
   typedef const Key &ConstReference;
 
-  Set() {
-    root_ = nullptr;
-  }
+  Set() = default;
 
   Set(Set &) = default;
 
@@ -202,14 +200,7 @@ Set<Key, Compare>::insert(Set::Node *root, const Key &key) const {
     root->lc = insert(root->lc, key);
   else
     root->rc = insert(root->rc, key);
-  if (is_red(root->rc) && !is_red(root->lc))
-    root = rotate_left(root);
-  if (is_red(root->lc) && is_red(root->lc->lc))
-    root = rotate_right(root);
-  if (is_red(root->lc) && is_red(root->rc))
-    color_flip(root);
-  root->size = size(root->lc) + size(root->rc) + 1;
-  return root;
+  return fix_up(root);
 }
 
 template<class Key, class Compare>
@@ -219,8 +210,11 @@ Set<Key, Compare>::delete_min(Set::Node *root) const {
     delete root;
     return nullptr;
   }
-  if (!is_red(root->lc) && !is_red(root->lc->lc))
+  if (!is_red(root->lc) && !is_red(root->lc->lc)) {
+    // make sure either root->lc or root->lc->lc is red
+    // thus make sure we will delete a red node in the end
     root = move_red_left(root);
+  }
   root->lc = delete_min(root->lc);
   return fix_up(root);
 }
@@ -252,7 +246,7 @@ Set<Key, Compare>::move_red_left(Set::Node *root) const {
 template<class Key, class Compare>
 typename Set<Key, Compare>::Node *
 Set<Key, Compare>::fix_up(Set::Node *root) const {
-  if (is_red(root->rc)) // fix right leaned red link
+  if (is_red(root->rc) && !is_red(root->lc)) // fix right leaned red link
     root = rotate_left(root);
   if (is_red(root->lc) && is_red(root->lc->lc)) // fix doubly linked left leaned red link
     // if (root->lc == nullptr), then the second expr won't be evaluated
@@ -285,6 +279,8 @@ Set<Key, Compare>::delete_arbitrary(Set::Node *root, Key key) const {
     // key < root->key
     if (!is_red(root->lc) && !(is_red(root->lc->lc)))
       root = move_red_left(root);
+    // ensure the invariant: either root->lc or root->lc->lc (or root and root->lc after dive into the function) is red,
+    // to ensure we will eventually delete a red node. therefore we will not break the black height balance
     root->lc = delete_arbitrary(root->lc, key);
   } else {
     // key >= root->key
@@ -310,16 +306,16 @@ Set<Key, Compare>::delete_arbitrary(Set::Node *root, Key key) const {
 template<class Key, class Compare>
 std::vector<Key> Set<Key, Compare>::serialize() const {
   std::vector<int> v;
-  serialize(root_, v);
+  serialize(root_, &v);
   return v;
 }
 
 template<class Key, class Compare>
-void Set<Key, Compare>::serialize(Set::Node *root, std::vector<Key> &res) const {
+void Set<Key, Compare>::serialize(Set::Node *root, std::vector<Key> *res) const {
   if (root == nullptr)
     return;
   serialize(root->lc, res);
-  res.push_back(root->key);
+  res->push_back(root->key);
   serialize(root->rc, res);
 }
 
