@@ -109,6 +109,15 @@ TEST_CASE("count test on int") {
   }
 }
 
+TEST_CASE("clear actually clear the set") {
+  mgt::Set<int> s;
+  s.insert(1);
+  s.insert(5);
+  s.insert(4);
+  s.clear();
+  REQUIRE(s.serialize().empty());
+}
+
 TEST_CASE("mgt::Set <=> std::set") {
   std::random_device rd;
   std::mt19937 gen(rd());
