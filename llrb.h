@@ -1,5 +1,5 @@
-#ifndef LLRB_LLRB_H
-#define LLRB_LLRB_H
+#ifndef LAB_LLRB_H
+#define LAB_LLRB_H
 
 #include <algorithm>
 #include <memory>
