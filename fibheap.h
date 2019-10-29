@@ -27,7 +27,7 @@ class PriorityQueue {
 
   void consolidate();
 
-  void insert_child(Node *root, Node *x);
+  void meld_child_to_root_list(Node *x);
 
   void merge_tree(Node *smaller, Node *bigger);
 
@@ -115,7 +115,7 @@ void PriorityQueue<Key, Compare>::pop() {
   } else {
     // the heap have more than one roots
     Node *x = min_element_->next;
-    insert_child(x, min_element_);
+    meld_child_to_root_list(min_element_);
     min_element_ = x;
   }
   // make sure min_element_ actually point to a min element
@@ -167,35 +167,24 @@ void PriorityQueue<Key, Compare>::consolidate() {
 }
 
 template<typename Key, typename Compare>
-void PriorityQueue<Key, Compare>::insert_child(PriorityQueue::Node *root, PriorityQueue::Node *x) {
-  // merge x's all children(if any) into root, clear their 'parent'
+void PriorityQueue<Key, Compare>::meld_child_to_root_list(PriorityQueue::Node *x) {
+  // merge x's all children(if any) into root list, clear their 'parent'
   // and then delete x
-  // you should set x = nullptr after call
   if (x->child) {
     Node *t = x->child, *last_child;
     do {
-      t->parent = root;
+      t->parent = nullptr;
       t = t->next;
     } while (t != x->child);
-    last_child = t;
+    last_child = t->prev;
     auto xp = x->prev, xn = x->next;
     // delete x, and insert [t, last_child]
     // before: xp -> x -> xn
-    // after : xp -> xn -> ... -> root
-    //                             |
-    //                             t -> ... -> last_child -> ori_children_of_root -> ...
-    xp->next = xn;
-    xn->prev = xp;
-    if (root->child) {
-      auto cp = root->child->prev, c = root->child;
-      cp->next = t;
-      last_child->next = c;
-      c->prev = last_child;
-      t->prev = cp;
-    } else {
-      // if root have no child, link x's children to it
-      root->child = t;
-    }
+    // after : xp -> t -> ... -> last_child -> xn -> ...
+    xp->next = t;
+    last_child->next = xn;
+    xn->prev = last_child;
+    t->prev = xp;
   } else {
     // if x have no child, just delete x and fix linked-list
     auto xp = x->prev, xn = x->next;
@@ -216,10 +205,10 @@ void PriorityQueue<Key, Compare>::merge_tree(PriorityQueue::Node *smaller, Prior
 
   // merge as child
   if (smaller->child) {
-    auto cp = smaller->child->prev, cn = smaller->child->next;
+    auto cp = smaller->child->prev, c = smaller->child;
     cp->next = bigger;
-    cn->prev = bigger;
-    bigger->next = cn;
+    bigger->next = c;
+    c->prev = bigger;
     bigger->prev = cp;
     bigger->parent = smaller;
   } else {
