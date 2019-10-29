@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
 project(llrb)
 find_package(Catch2 REQUIRED)
-#target_link_libraries(tests Catch2::Catch2)
 set(CMAKE_CXX_STANDARD 14)
 add_executable(llrb main.cpp)
-add_executable(llrb_test test.cpp)
+add_executable(llrb_test llrb_test.cpp)
 
 target_link_libraries(llrb_test Catch2::Catch2)
 
