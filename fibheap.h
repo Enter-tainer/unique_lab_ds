@@ -100,6 +100,7 @@ void PriorityQueue<Key, Compare>::pop() {
     // so simply remove the whole tree
     delete min_element_;
     min_element_ = nullptr;
+    size_--;
     return;
   }
   if (min_element_->next == min_element_) {

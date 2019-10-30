@@ -11,10 +11,12 @@
 
 #include "llrb.h"
 
+constexpr int n = 10000;
 TEST_CASE("insert test on int", "[insert]") {
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_int_distribution<> dis(1, 10000);
+  std::uniform_int_distribution<> dis(1, 1000000);
+
 
   SECTION("insert a value twice is not an error") {
     mgt::Set<int> s;
@@ -24,30 +26,30 @@ TEST_CASE("insert test on int", "[insert]") {
     REQUIRE(s.serialize() == std::vector<int>{1, 2});
   }
 
-  SECTION("work with 1000 numbers, insert sequentially") {
+  SECTION("work with n numbers, insert sequentially") {
     mgt::Set<int> s;
-    for (int i = 0; i < 1000; ++i)
+    for (int i = 0; i < n; ++i)
       s.insert(i);
     std::vector<int> v = s.serialize();
-    REQUIRE(v.size() == 1000);
+    REQUIRE(v.size() == n);
     for (size_t i = 0; i < v.size(); ++i)
       REQUIRE(v[i] == i);
   }
 
-  SECTION("work with 1000 numbers, insert reversely") {
+  SECTION("work with n numbers, insert reversely") {
     mgt::Set<int> s;
-    for (int i = 999; i >= 0; --i)
+    for (int i = n - 1; i >= 0; --i)
       s.insert(i);
     std::vector<int> v = s.serialize();
-    REQUIRE(v.size() == 1000);
+    REQUIRE(v.size() == n);
     for (size_t i = 0; i < v.size(); ++i)
       REQUIRE(v[i] == i);
   }
 
-  SECTION("work with 1000 numbers, insert randomly") {
+  SECTION("work with n numbers, insert randomly") {
     mgt::Set<int> s;
     std::vector<int> v;
-    for (int i = 0; i < 1000; ++i)
+    for (int i = 0; i < n; ++i)
       v.push_back(dis(gen));
     std::sort(v.begin(), v.end());
     auto new_end = std::unique(v.begin(), v.end());
@@ -66,16 +68,15 @@ TEST_CASE("insert test on int", "[insert]") {
 TEST_CASE("delete test on int", "[delete]") {
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_int_distribution<> dis(1, 10000);
-
+  std::uniform_int_distribution<> dis(1, 1000000);
   SECTION("delete even numbers") {
     mgt::Set<int> s;
-    for (int i = 0; i < 1000; ++i)
+    for (int i = 0; i < n; ++i)
       s.insert(i);
-    for (int i = 0; i < 1000; i += 2)
+    for (int i = 0; i < n; i += 2)
       s.erase(i);
     std::vector<int> v = s.serialize();
-    REQUIRE(v.size() == 500);
+    REQUIRE(v.size() == n / 2);
     for (size_t i = 0; i < v.size(); ++i)
       REQUIRE(v[i] == 2 * i + 1);
   }
@@ -83,9 +84,9 @@ TEST_CASE("delete test on int", "[delete]") {
   SECTION("delete randomly") {
     std::set<int> st;
     mgt::Set<int> s;
-    while (st.size() < 1000)
+    while (st.size() < n)
       st.insert(dis(gen));
-    std::vector<int> v(1000);
+    std::vector<int> v(n);
     std::copy(st.begin(), st.end(), v.begin());
     for (auto &i : v)
       s.insert(i);
@@ -99,10 +100,10 @@ TEST_CASE("delete test on int", "[delete]") {
 TEST_CASE("count test on int") {
   SECTION("count even numbers") {
     mgt::Set<int> s;
-    for (int i = 0; i < 1000; ++i)
+    for (int i = 0; i < n; ++i)
       s.insert(i);
-    for (int i = 0; i < 1000; ++i)
-      if (i < 500)
+    for (int i = 0; i < n; ++i)
+      if (i < n / 2)
         REQUIRE(s.count(i * 2));
       else
         REQUIRE(s.count(i * 2) == 0);
@@ -122,12 +123,12 @@ TEST_CASE("mgt::Set <=> std::set") {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<> dis(0, 2);
-  std::uniform_int_distribution<> insert_rand(0, 10000);
+  std::uniform_int_distribution<> insert_rand(0, 1000000);
   enum Op {
     kInsert, kErase, kCount
   };
   std::vector<Op> ops;
-  for (int i = 0; i < 3000; ++i)
+  for (int i = 0; i < n; ++i)
     ops.push_back(Op(dis(gen)));
   mgt::Set<int> s;
   std::set<int> st;
