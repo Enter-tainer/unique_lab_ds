@@ -155,7 +155,7 @@ void PriorityQueue<Key, Compare>::consolidate() {
     int d = x->deg;
     while (arr[d]) {
       Node *y = arr[d];
-      if (x->key > y->key)
+      if (cmp_(y->key, x->key))
         std::swap(x, y);
       merge_tree(x, y);
       arr[d] = nullptr;
