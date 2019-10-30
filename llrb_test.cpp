@@ -161,3 +161,17 @@ TEST_CASE("mgt::Set <=> std::set") {
   std::copy(st.begin(), st.end(), v1.begin());
   REQUIRE(v1 == v2);
 }
+
+TEST_CASE("mgt::Set works when use a customized compare function") {
+  mgt::Set<int, std::greater<>> s;
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> rand_value(0, 1000000);
+  int maxvalue = 0;
+  for (int i = 1; i <= n; ++i) {
+    int rnd = rand_value(gen);
+    maxvalue = std::max(maxvalue, rnd);
+    s.insert(rnd);
+  }
+  REQUIRE(s.serialize()[0] == maxvalue);
+}

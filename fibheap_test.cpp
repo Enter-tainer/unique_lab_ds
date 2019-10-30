@@ -83,10 +83,12 @@ TEST_CASE("mgt::PriorityQueue <=> std::priority_queue") {
 
 TEST_CASE("when compare changes, pq also works") {
   mgt::PriorityQueue<int, std::greater<>> pq;
-  for (int i = 1; i <= 1000; ++i)
+  for (int i = 1; i <= n; ++i)
     pq.push(i);
-  REQUIRE(pq.top() == 1000);
+  REQUIRE(pq.top() == n);
   pq.pop();
-  REQUIRE(pq.top() == 999);
-//  REQUIRE(pq.top() == 499);
+  REQUIRE(pq.top() == n - 1);
+  for (int i = n - 1; i >= n / 2; --i)
+    pq.pop();
+  REQUIRE(pq.top() == n / 2 - 1);
 }
