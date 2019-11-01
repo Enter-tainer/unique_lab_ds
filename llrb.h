@@ -17,6 +17,7 @@ class Set {
   struct Node {
     Key key;
     Node *lc{nullptr}, *rc{nullptr};
+    Node *prev{nullptr}, *next{nullptr};
     size_t size{0};
     NodeColor color; // the color of the parent link
 
@@ -100,8 +101,6 @@ class Set {
 
   void serialize(Node *root, std::vector<Key> *) const;
 
-  void print_tree(Set::Node *root, int indent) const;
-
   Compare cmp_ = Compare();
   Node *root_{nullptr};
 
@@ -115,6 +114,44 @@ class Set {
   typedef Compare ValueCompare;
   typedef Key &Reference;
   typedef const Key &ConstReference;
+
+  class Iterator {
+   private:
+    typename Set<Key, Compare>::Node *cur_{nullptr};
+   public:
+    typedef typename Set<Key, Compare>::Node NodeType;
+
+    Iterator() = default;
+
+    explicit Iterator(NodeType *cur) : cur_(cur) {}
+
+    Iterator &operator++() {
+      cur_ = cur_->next;
+      return *this;
+    }
+
+    Iterator &operator--() {
+      cur_ = cur_->prev;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      Iterator x = *this;
+      operator++();
+      return x;
+    }
+
+    Iterator operator--(int) {
+      Iterator x = *this;
+      operator--();
+      return x;
+    }
+
+    Key &operator*() {
+      return cur_->key;
+    }
+
+  };
 
   Set() = default;
 
@@ -140,8 +177,14 @@ class Set {
 
   std::vector<Key> serialize() const;
 
-  void print_tree() const;
+  Iterator find(const Key &key);
+
+  Iterator lower_bound(const Key &key);
+
+  Iterator upper_bound(const Key &key);
+
 };
+
 
 template<class Key, class Compare>
 typename Set<Key, Compare>::SizeType
@@ -195,11 +238,30 @@ typename Set<Key, Compare>::Node *
 Set<Key, Compare>::insert(Set::Node *root, const Key &key) const {
   if (root == nullptr)
     return new Node(key, kRed, 1);
-  if (root->key == key);
-  else if (cmp_(key, root->key)) // if (key < root->key)
+  if (root->key == key); // do nothing
+  else if (cmp_(key, root->key)) { // if (key < root->key)
+    auto x = root->lc;
     root->lc = insert(root->lc, key);
-  else
+    if (x == nullptr) {
+      auto newly_inserted = root->lc, xp = root->prev;
+      if (xp)
+        xp->next = newly_inserted;
+      newly_inserted->next = root;
+      root->prev = newly_inserted;
+      newly_inserted->prev = xp;
+    }
+  } else {
+    auto x = root->rc;
     root->rc = insert(root->rc, key);
+    if (x == nullptr) {
+      auto newly_inserted = root->rc, xn = root->next;
+      root->next = newly_inserted;
+      newly_inserted->next = xn;
+      if (xn)
+        xn->prev = newly_inserted;
+      newly_inserted->prev = root;
+    }
+  }
   return fix_up(root);
 }
 
@@ -287,6 +349,11 @@ Set<Key, Compare>::delete_arbitrary(Set::Node *root, Key key) const {
     if (is_red(root->lc))
       root = rotate_right(root);
     if (key == root->key && root->rc == nullptr) {
+      auto rp = root->prev, rn = root->next;
+      if (rp)
+        rp->next = rn;
+      if (rn)
+        rn->prev = rp;
       delete root;
       return nullptr;
     }
@@ -320,19 +387,50 @@ void Set<Key, Compare>::serialize(Set::Node *root, std::vector<Key> *res) const 
 }
 
 template<class Key, class Compare>
-void Set<Key, Compare>::print_tree(Set::Node *root, int indent) const {
-  if (root == nullptr)
-    return;
-  print_tree(root->lc, indent + 4);
-  std::cout << std::string(indent, '-') << root->key << std::endl;
-  print_tree(root->rc, indent + 4);
+typename Set<Key, Compare>::Iterator Set<Key, Compare>::upper_bound(const Key &key) {
+  Iterator x = lower_bound(key);
+  if (*x == key)
+    return ++x;
+  else
+    return x;
 }
 
 template<class Key, class Compare>
-void Set<Key, Compare>::print_tree() const {
-  print_tree(root_, 0);
+typename Set<Key, Compare>::Iterator Set<Key, Compare>::lower_bound(const Key &key) {
+  auto x = root_, ans = x;
+  while (x) {
+    if (x->key == key) {
+      ans = x;
+      break;
+    }
+    if (x->lc == nullptr && x->rc == nullptr) {
+      if (cmp_(key, x->key))
+        ans = x;
+      else
+        ans = x->next;
+      break;
+    }
+    if (cmp_(key, x->key))
+      x = x->lc;
+    else
+      x = x->rc;
+  }
+  return Iterator(ans);
 }
 
+template<class Key, class Compare>
+typename Set<Key, Compare>::Iterator Set<Key, Compare>::find(const Key &key) {
+  auto x = root_;
+  while (x) {
+    if (x->key == key)
+      return Iterator(x);
+    if (cmp_(key, x->key))
+      x = x->lc;
+    else
+      x = x->rc;
+  }
+  return Iterator(nullptr);
+}
 
 } // namespace mgt
 #endif
