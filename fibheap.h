@@ -33,6 +33,8 @@ class PriorityQueue {
 
   void update_min_pointer();
 
+  Node *extract_min();
+
  public:
   typedef Key ValueType;
   typedef Key &Reference;
@@ -143,28 +145,63 @@ void PriorityQueue<Key, Compare>::destroy_heap(PriorityQueue::Node *rt) {
 
 template<typename Key, typename Compare>
 void PriorityQueue<Key, Compare>::consolidate() {
-  Node *arr[64];
+  Node *cons[256];
   // since degree ~= log(size), 64 is greater than the max bound of degree
-  std::fill(std::begin(arr), std::end(arr), nullptr);
-  Node *st = min_element_, *i = st;
-  // since st is the min element in the root list, it will never be merge into other roots
-  // so it is safe to start & end from it
-  do {
-    Node *next_node = i->next; // cache next node
-    Node *x = i; // cache i
+  std::fill(std::begin(cons), std::end(cons), nullptr);
+//  Node *st = min_element_, *i = st;
+//  // since st is the min element in the root list, it will never be merge into other roots
+//  // so it is safe to start & end from it
+//  do {
+//    Node *next_node = i->next; // cache next node
+//    Node *x = i; // cache i
+//    int d = x->deg;
+//    while (arr[d]) {
+//      Node *y = arr[d];
+//      if (cmp_(y->key, x->key))
+//        std::swap(x, y);
+//      merge_tree(x, y);
+//      arr[d] = nullptr;
+//      d++;
+//    }
+//    arr[d] = x;
+//    i = next_node; // i = i->next
+//  } while (i != st);
+//  // end, because min pointer don't need to be updated
+  Node *x, *y;
+  while (min_element_) {
+    x = extract_min();
     int d = x->deg;
-    while (arr[d]) {
-      Node *y = arr[d];
+    while (cons[d]) {
+      y = cons[d];
       if (cmp_(y->key, x->key))
         std::swap(x, y);
       merge_tree(x, y);
-      arr[d] = nullptr;
-      d++;
+      cons[d] = nullptr;
+      ++d;
     }
-    arr[d] = x;
-    i = next_node; // i = i->next
-  } while (i != st);
-  // end, because min pointer don't need to be updated
+    cons[d] = x;
+  }
+
+  for (auto &con : cons)
+    if (con)
+      con->prev = con->next = con;
+  min_element_ = nullptr;
+  for (auto &con : cons) {
+    if (con) {
+      if (min_element_ == nullptr) {
+        min_element_ = con;
+      } else {
+        auto mn = min_element_->next;
+        min_element_->next = con;
+        con->next = mn;
+        mn->prev = con;
+        con->prev = min_element_;
+        con->parent = nullptr;
+        if (cmp_(con->key, min_element_->key))
+          min_element_ = con;
+      }
+    }
+  }
 }
 
 template<typename Key, typename Compare>
@@ -228,6 +265,22 @@ void PriorityQueue<Key, Compare>::update_min_pointer() {
       min_element_ = i;
     i = i->next;
   } while (i != st);
+}
+
+template<typename Key, typename Compare>
+typename PriorityQueue<Key, Compare>::Node *
+PriorityQueue<Key, Compare>::extract_min() {
+  Node *p = min_element_;
+  if (min_element_->next == min_element_) {
+    min_element_ = nullptr;
+  } else {
+    auto mn = min_element_->next, mp = min_element_->prev;
+    min_element_ = mn;
+    mp->next = mn;
+    mn->prev = mp;
+  }
+  p->prev = p->next = p;
+  return p;
 }
 
 }
