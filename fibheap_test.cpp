@@ -41,7 +41,7 @@ TEST_CASE("mgt::PriorityQueue <=> std::priority_queue") {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<> dis(0, 2);
-  std::uniform_int_distribution<> insert_rand(0, 1000000);
+  std::uniform_int_distribution<> insert_rand(0, n * 100);
   std::vector<Op> ops;
   for (int i = 0; i < n; ++i)
     ops.push_back(Op(dis(gen)));
