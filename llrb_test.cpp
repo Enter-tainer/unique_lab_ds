@@ -175,3 +175,42 @@ TEST_CASE("mgt::Set works when use a customized compare function") {
   }
   REQUIRE(s.serialize()[0] == maxvalue);
 }
+
+TEST_CASE("iterator find") {
+  mgt::Set<int> s;
+  for (int i = 1; i <= n; ++i)
+    s.insert(i);
+  for (int i = 2; i <= n; i += 2)
+    s.erase(i);
+  for (int i = 1; i <= n; i += 2)
+    REQUIRE(*s.find(i) == i);
+}
+
+TEST_CASE("iterator iterate") {
+  mgt::Set<int> s;
+  for (int i = 1; i <= n; ++i)
+    s.insert(i);
+  for (int i = 2; i <= n; i += 2)
+    s.erase(i);
+  int k = 1;
+  auto end = s.find(0);
+  for (auto i = s.find(2); i != end; ++i, k += 2)
+    REQUIRE(k == *i);
+}
+
+TEST_CASE("lower_bound & upper_bound") {
+  mgt::Set<int> s;
+  for (int i = 1; i <= n; ++i)
+    s.insert(i);
+  for (int i = 2; i <= n; i += 2)
+    s.erase(i);
+  for (int i = 1; i <= n - 2; ++i) {
+    int lo, up;
+    if (i % 2 == 1)
+      lo = i, up = i + 2;
+    else
+      lo = up = i + 1;
+    REQUIRE(*s.lower_bound(i) == lo);
+    REQUIRE(*s.upper_bound(i) == up);
+  }
+}
