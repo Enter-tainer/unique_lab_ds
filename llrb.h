@@ -151,6 +151,13 @@ class Set {
       return cur_->key;
     }
 
+    bool operator==(const Iterator &l) const {
+      return cur_ == l.cur_;
+    }
+
+    bool operator!=(const Iterator &l) const {
+      return !operator==(l);
+    }
   };
 
   Set() = default;
@@ -269,6 +276,11 @@ template<class Key, class Compare>
 typename Set<Key, Compare>::Node *
 Set<Key, Compare>::delete_min(Set::Node *root) const {
   if (root->lc == nullptr) {
+    auto rp = root->prev, rn = root->next;
+    if (rp)
+      rp->next = rn;
+    if (rn)
+      rn->prev = rp;
     delete root;
     return nullptr;
   }
@@ -397,21 +409,14 @@ typename Set<Key, Compare>::Iterator Set<Key, Compare>::upper_bound(const Key &k
 
 template<class Key, class Compare>
 typename Set<Key, Compare>::Iterator Set<Key, Compare>::lower_bound(const Key &key) {
-  auto x = root_, ans = x;
+  Node *x = root_, *ans = nullptr;
   while (x) {
-    if (x->key == key) {
+    if (!cmp_(x->key, key) && (ans == nullptr || cmp_(x->key, ans->key)))
       ans = x;
-      break;
-    }
-    if (x->lc == nullptr && x->rc == nullptr) {
-      if (cmp_(key, x->key))
-        ans = x;
-      else
-        ans = x->next;
-      break;
-    }
     if (cmp_(key, x->key))
       x = x->lc;
+    else if (key == x->key)
+      break;
     else
       x = x->rc;
   }
