@@ -146,27 +146,7 @@ void PriorityQueue<Key, Compare>::destroy_heap(PriorityQueue::Node *rt) {
 template<typename Key, typename Compare>
 void PriorityQueue<Key, Compare>::consolidate() {
   Node *cons[256];
-  // since degree ~= log(size), 64 is greater than the max bound of degree
   std::fill(std::begin(cons), std::end(cons), nullptr);
-//  Node *st = min_element_, *i = st;
-//  // since st is the min element in the root list, it will never be merge into other roots
-//  // so it is safe to start & end from it
-//  do {
-//    Node *next_node = i->next; // cache next node
-//    Node *x = i; // cache i
-//    int d = x->deg;
-//    while (arr[d]) {
-//      Node *y = arr[d];
-//      if (cmp_(y->key, x->key))
-//        std::swap(x, y);
-//      merge_tree(x, y);
-//      arr[d] = nullptr;
-//      d++;
-//    }
-//    arr[d] = x;
-//    i = next_node; // i = i->next
-//  } while (i != st);
-//  // end, because min pointer don't need to be updated
   Node *x, *y;
   while (min_element_) {
     x = extract_min();
