@@ -11,7 +11,7 @@
 
 #include "llrb.h"
 
-constexpr int n = 10000;
+constexpr int n = 1000000;
 TEST_CASE("insert test on int", "[insert]") {
   std::random_device rd;
   std::mt19937 gen(rd());

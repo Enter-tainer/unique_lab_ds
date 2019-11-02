@@ -12,7 +12,7 @@
 
 #include "fibheap.h"
 
-constexpr int n = 10000;
+constexpr int n = 1000000;
 
 TEST_CASE("pq push top and pop test") {
   mgt::PriorityQueue<int> pq;
